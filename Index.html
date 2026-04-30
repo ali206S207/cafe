@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ember Café — القائمة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e0a07;
+      --surface: #1a1208;
+      --card: #221a0f;
+      --card-hover: #2d2214;
+      --accent: #c8922a;
+      --accent-light: #e8b45c;
+      --accent-glow: rgba(200,146,42,0.25);
+      --text-primary: #f2e8d5;
+      --text-muted: #a08860;
+      --text-dim: #5c4a32;
+      --border: rgba(200,146,42,0.15);
+      --border-hover: rgba(200,146,42,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Tajawal', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      padding: 2rem;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,146,42,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 80% at 20% 100%, rgba(200,100,20,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 80% 50%, rgba(180,80,10,0.06) 0%, transparent 50%);
+      animation: breathe 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes breathe {
+      from { opacity: 0.7; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.05); }
+    }
+
+    /* Steam particles */
+    .steam-container {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .steam {
+      position: absolute;
+      width: 3px;
+      border-radius: 50%;
+      background: linear-gradient(to top, var(--accent-light), transparent);
+      animation: rise linear infinite;
+      opacity: 0;
+    }
+
+    .steam:nth-child(1) { height: 60px; left: -20px; animation-duration: 3s; animation-delay: 0s; }
+    .steam:nth-child(2) { height: 80px; left: 0px;   animation-duration: 4s; animation-delay: 0.8s; }
+    .steam:nth-child(3) { height: 50px; left: 20px;  animation-duration: 3.5s; animation-delay: 1.5s; }
+    .steam:nth-child(4) { height: 70px; left: -10px; animation-duration: 4.5s; animation-delay: 2s; }
+
+    @keyframes rise {
+      0%   { opacity: 0; transform: translateY(0) scaleX(1); }
+      20%  { opacity: 0.6; }
+      80%  { opacity: 0.2; }
+      100% { opacity: 0; transform: translateY(-120px) scaleX(2); }
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--border-hover);
+      padding: 0.4rem 1.2rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+      animation: fadeDown 0.8s ease both;
+      background: rgba(200,146,42,0.06);
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.5rem, 10vw, 8rem);
+      font-weight: 700;
+      line-height: 1;
+      background: linear-gradient(135deg, #f2e8d5 0%, var(--accent-light) 50%, #f2e8d5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeDown 0.8s 0.2s ease both;
+      text-shadow: none;
+    }
+
+    .hero-sub {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      animation: fadeDown 0.8s 0.4s ease both;
+    }
+
+    .hero-divider {
+      width: 80px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      margin: 2rem auto;
+      animation: fadeDown 0.8s 0.6s ease both;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 400px;
+      line-height: 1.8;
+      animation: fadeDown 0.8s 0.8s ease both;
+    }
+
+    .scroll-cta {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      animation: fadeDown 0.8s 1s ease both;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: pulse-line 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-line {
+      0%, 100% { opacity: 0.4; transform: scaleY(1); }
+      50%       { opacity: 1;   transform: scaleY(1.1); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── NAV TABS ── */
+    .nav-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(14,10,7,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'Tajawal', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 1.1rem 1.5rem;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.3s;
+      white-space: nowrap;
+    }
+
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      transform: scaleX(0);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-light);
+    }
+
+    .tab-btn.active::after {
+      transform: scaleX(1);
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+
+    /* ── SECTIONS ── */
+    .menu-main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+
+    .section {
+      display: none;
+      animation: sectionIn 0.5s ease both;
+    }
+
+    .section.active { display: block; }
+
+    @keyframes sectionIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .section-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .section-line {
+      width: 50px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      margin: 1rem auto 0;
+    }
+
+    /* ── MENU GRID ── */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .menu-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1),
+                  border-color 0.3s,
+                  box-shadow 0.3s;
+      animation: cardIn 0.5s ease both;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: var(--border-hover);
+      box-shadow: 0 20px 50px rgba(200,146,42,0.12), 0 0 0 1px rgba(200,146,42,0.08);
+      background: var(--card-hover);
+    }
+
+    .menu-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .menu-card:hover::before { opacity: 1; }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .card-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .card-name-ar {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.7rem;
+      font-style: italic;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-price {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent-light);
+    }
+
+    .card-price span {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-dim);
+      margin-right: 2px;
+    }
+
+    .card-tag {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.7rem;
+      border-radius: 100px;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      border: 1px solid rgba(200,146,42,0.2);
+    }
+
+    /* ── FEATURED ROW ── */
+    .featured-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .featured-card {
+      background: linear-gradient(135deg, #2d1e08, #1a1208);
+      border: 1px solid rgba(200,146,42,0.25);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .featured-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 60px rgba(200,146,42,0.15);
+    }
+
+    .featured-card .glow-orb {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,146,42,0.15), transparent 70%);
+      top: -30px;
+      left: -30px;
+      pointer-events: none;
+    }
+
+    .featured-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .featured-icon { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; }
+
+    .featured-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .featured-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .featured-price {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    /* ── SPECIAL BANNER ── */
+    .special-banner {
+      background: linear-gradient(135deg, rgba(200,146,42,0.12), rgba(180,80,20,0.08));
+      border: 1px solid rgba(200,146,42,0.3);
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .banner-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+    .banner-text h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin-bottom: 0.2rem;
+    }
+
+    .banner-text p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-tagline {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer-info {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .footer-info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border-hover);
+      border-radius: 24px;
+      padding: 2.5rem;
+      max-width: 420px;
+      width: 100%;
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(200,146,42,0.1);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    .modal-icon { font-size: 3rem; margin-bottom: 1rem; text-align: center; display: block; }
+    .modal-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.4rem; text-align: center; }
+    .modal-sub  { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
+    .modal-hr   { height: 1px; background: var(--border); margin: 1.2rem 0; }
+    .modal-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; margin-bottom: 1.5rem; text-align: center; }
+    .modal-price { text-align: center; font-size: 1.8rem; font-weight: 700; color: var(--accent-light); }
+    .modal-price small { font-size: 0.9rem; color: var(--text-dim); font-weight: 400; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 2px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .featured-row { grid-template-columns: 1fr; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .footer-info { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="steam-container">
+    <div class="steam"></div>
+    <div class="steam"></div>
+    <div class="steam"></div>
+    <div class="steam"></div>
+  </div>
+
+  <span class="hero-badge">☕ Ember Café • منذ ٢٠١٨</span>
+  <h1 class="hero-title">Ember</h1>
+  <p class="hero-sub">Café & Roastery</p>
+  <div class="hero-divider"></div>
+  <p class="hero-desc">حيث تلتقي رائحة القهوة الطازجة بدفء اللحظات الهادئة — كل كوب حكاية</p>
+
+  <div class="scroll-cta" onclick="document.querySelector('.nav-wrapper').scrollIntoView({behavior:'smooth'})">
+    <div class="scroll-line"></div>
+    <span>اكتشف القائمة</span>
+  </div>
+</section>
+
+<!-- ── NAV ── -->
+<nav class="nav-wrapper">
+  <div class="nav-tabs" id="navTabs">
+    <button class="tab-btn active" data-section="hot">☕ القهوة الساخنة</button>
+    <button class="tab-btn" data-section="cold">🧊 المشروبات الباردة</button>
+    <button class="tab-btn" data-section="food">🥐 الأكل</button>
+    <button class="tab-btn" data-section="desserts">🍰 الحلويات</button>
+    <button class="tab-btn" data-section="special">✨ عروض خاصة</button>
+  </div>
+</nav>
+
+<!-- ── MENU ── -->
+<main class="menu-main">
+
+  <!-- HOT DRINKS -->
+  <div class="section active" id="hot">
+    <div class="section-header">
+      <p class="section-eyebrow">Signature Hot Drinks</p>
+      <h2 class="section-title">القهوة الساخنة</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- Featured -->
+    <div class="featured-row">
+      <div class="featured-card" onclick="openModal('☕','Ember Signature','إمبر سيجنيتشر','قهوتنا الاسبريسو المميزة بمزيج حبوب اثيوبية وكولومبية، مع طبقة كريمة ناعمة ورائحة تملأ المكان','45 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">⭐ الأكثر طلباً</span>
+        <span class="featured-icon">☕</span>
+        <h3 class="featured-name">Ember Signature</h3>
+        <p class="featured-desc">مزيج حبوب اثيوبية وكولومبية محمصة بعناية، مع كريما ناعمة</p>
+        <div class="featured-price">٤٥ ج</div>
+      </div>
+      <div class="featured-card" onclick="openModal('🌿','Matcha Latte','ماتشا لاتيه','ماتشا يابانية درجة سيريموني مخلوطة مع حليب البخار الكريمي، حلاوة خفيفة ومذاق فريد','50 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">🔥 الأحدث</span>
+        <span class="featured-icon">🌿</span>
+        <h3 class="featured-name">Matcha Latte</h3>
+        <p class="featured-desc">ماتشا يابانية أصيلة مع حليب البخار الكريمي الطازج</p>
+        <div class="featured-price">٥٠ ج</div>
+      </div>
+    </div>
+
+    <div class="menu-grid">
+      <div class="menu-card" onclick="openModal('☕','Espresso','إسبريسو','شوت اسبريسو مزدوج من أفضل حبوب الأرابيكا، مركّز وغني وقوي','25 جنيه')">
+        <span class="card-icon">☕</span>
+        <div class="card-name">Espresso</div>
+        <div class="card-name-ar">إسبريسو</div>
+        <p class="card-desc">شوت مزدوج من أرقى حبوب الأرابيكا، مركّز وغني</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٢٥</div>
+          <span class="card-tag">CLASSIC</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🥛','Cappuccino','كابتشينو','اسبريسو مزدوج مع حليب مبخر وطبقة فوم ناعمة كالسحاب','35 جنيه')">
+        <span class="card-icon">🥛</span>
+        <div class="card-name">Cappuccino</div>
+        <div class="card-name-ar">كابتشينو</div>
+        <p class="card-desc">اسبريسو مزدوج مع حليب مبخر وطبقة فوم ناعمة كالسحاب</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٣٥</div>
+          <span class="card-tag">FAVORITE</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍫','Mocha','موكا','اسبريسو مع شوكولاتة داكنة بلجيكية وحليب كريمي، لمحبي الحلاوة','40 جنيه')">
+        <span class="card-icon">🍫</span>
+        <div class="card-name">Mocha</div>
+        <div class="card-name-ar">موكا</div>
+        <p class="card-desc">اسبريسو مع شوكولاتة داكنة بلجيكية وحليب كريمي</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٤٠</div>
+          <span class="card-tag">SWEET</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🌰','Hazelnut Latte','هازلنت لاتيه','لاتيه كريمي بنكهة البندق الفاخرة، دافئ ومريح','42 جنيه')">
+        <span class="card-icon">🌰</span>
+        <div class="card-name">Hazelnut Latte</div>
+        <div class="card-name-ar">هازلنت لاتيه</div>
+        <p class="card-desc">لاتيه كريمي بنكهة البندق الفاخرة، دافئ ومريح</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٤٢</div>
+          <span class="card-tag">SIGNATURE</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍵','Green Tea Latte','جرين تي لاتيه','شاي أخضر عالي الجودة مع حليب مبخر وعسل طبيعي','35 جنيه')">
+        <span class="card-icon">🍵</span>
+        <div class="card-name">Green Tea Latte</div>
+        <div class="card-name-ar">جرين تي لاتيه</div>
+        <p class="card-desc">شاي أخضر فاخر مع حليب مبخر وعسل طبيعي</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٣٥</div>
+          <span class="card-tag">LIGHT</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🌶️','Spiced Chai','تشاي بالتوابل','مزيج تشاي هندي أصيل بالهيل والقرفة والزنجبيل مع حليب مبخر','38 جنيه')">
+        <span class="card-icon">🌶️</span>
+        <div class="card-name">Spiced Chai</div>
+        <div class="card-name-ar">تشاي بالتوابل</div>
+        <p class="card-desc">مزيج تشاي هندي أصيل بالهيل والقرفة والزنجبيل</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٣٨</div>
+          <span class="card-tag">SPICY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLD DRINKS -->
+  <div class="section" id="cold">
+    <div class="section-header">
+      <p class="section-eyebrow">Chilled to Perfection</p>
+      <h2 class="section-title">المشروبات الباردة</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="featured-row">
+      <div class="featured-card" onclick="openModal('🧊','Cold Brew','كولد برو','قهوة مخمّرة على بارد لـ٢٤ ساعة، ناعمة ومركزة وقليلة الحموضة بشكل رائع','55 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">⭐ الأشهر</span>
+        <span class="featured-icon">🧊</span>
+        <h3 class="featured-name">Cold Brew</h3>
+        <p class="featured-desc">مخمّرة ٢٤ ساعة على بارد لنكهة ناعمة ومركزة لا تُنسى</p>
+        <div class="featured-price">٥٥ ج</div>
+      </div>
+      <div class="featured-card" onclick="openModal('🥤','Ember Frappe','إمبر فرابيه','مزيج القهوة المثلجة الكريمي الخاص بنا مع الكراميل والشوكولاتة','60 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">🔥 أحدث إضافة</span>
+        <span class="featured-icon">🥤</span>
+        <h3 class="featured-name">Ember Frappe</h3>
+        <p class="featured-desc">فرابيه مميز بالكراميل والشوكولاتة وكريمة طازجة</p>
+        <div class="featured-price">٦٠ ج</div>
+      </div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="openModal('🍦','Iced Latte','آيسد لاتيه','لاتيه مثلج كلاسيكي مع حليب كامل الدسم على ثلج مجروش','35 جنيه')">
+        <span class="card-icon">🍦</span>
+        <div class="card-name">Iced Latte</div>
+        <div class="card-name-ar">آيسد لاتيه</div>
+        <p class="card-desc">لاتيه مثلج كلاسيكي مع حليب كامل الدسم</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٣٥</div><span class="card-tag">CLASSIC</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍓','Berry Smoothie','بيري سموذي','خليط توت أحمر وتوت بلو مع موز وعصير ليمون طازج','45 جنيه')">
+        <span class="card-icon">🍓</span>
+        <div class="card-name">Berry Smoothie</div>
+        <div class="card-name-ar">بيري سموذي</div>
+        <p class="card-desc">خليط توت أحمر وبلو مع موز وليمون طازج</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٤٥</div><span class="card-tag">HEALTHY</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🥭','Mango Lassi','مانجو لاسي','مانجو مصري فاخر مع لبن زبادي كريمي وقطرة ماء زهر','40 جنيه')">
+        <span class="card-icon">🥭</span>
+        <div class="card-name">Mango Lassi</div>
+        <div class="card-name-ar">مانجو لاسي</div>
+        <p class="card-desc">مانجو مصري فاخر مع زبادي كريمي وقطرة ماء زهر</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٤٠</div><span class="card-tag">SUMMER</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍵','Iced Matcha','آيسد ماتشا','ماتشا يابانية على ثلج مجروش مع حليب اللوز الكريمي','52 جنيه')">
+        <span class="card-icon">🍵</span>
+        <div class="card-name">Iced Matcha</div>
+        <div class="card-name-ar">آيسد ماتشا</div>
+        <p class="card-desc">ماتشا يابانية على ثلج مجروش مع حليب اللوز</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٥٢</div><span class="card-tag">TRENDY</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOD -->
+  <div class="section" id="food">
+    <div class="section-header">
+      <p class="section-eyebrow">Fresh & Crafted</p>
+      <h2 class="section-title">الأكل</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="special-banner">
+      <span class="banner-icon">🕐</span>
+      <div class="banner-text">
+        <h3>الإفطار الصباحي</h3>
+        <p>وجبة الإفطار الكاملة متاحة من ٨ صباحاً حتى ١ ظهراً كل يوم</p>
+      </div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="openModal('🥐','Butter Croissant','كرواسان بالزبدة','كرواسان فرنسي طازج مخبوز يومياً، هش من الخارج طري من الداخل','30 جنيه')">
+        <span class="card-icon">🥐</span>
+        <div class="card-name">Butter Croissant</div>
+        <div class="card-name-ar">كرواسان بالزبدة</div>
+        <p class="card-desc">مخبوز يومياً، هش من الخارج وطري من الداخل</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٣٠</div><span class="card-tag">FRESH</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🥪','Chicken Pesto Sandwich','ساندويتش دجاج بيستو','صدر دجاج مشوي مع صلصة البيستو الخضراء وطماطم مجففة وجبن موزاريلا','75 جنيه')">
+        <span class="card-icon">🥪</span>
+        <div class="card-name">Chicken Pesto Sandwich</div>
+        <div class="card-name-ar">ساندويتش دجاج بيستو</div>
+        <p class="card-desc">دجاج مشوي مع بيستو خضراء وطماطم مجففة وموزاريلا</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٧٥</div><span class="card-tag">HEARTY</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🥣','Acai Bowl','آساي بول','آساي برازيلي مجمد مع فراولة وموز وجرانولا محلية الصنع وعسل','65 جنيه')">
+        <span class="card-icon">🥣</span>
+        <div class="card-name">Acai Bowl</div>
+        <div class="card-name-ar">آساي بول</div>
+        <p class="card-desc">آساي مجمد مع فراولة وموز وجرانولا وعسل طبيعي</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٦٥</div><span class="card-tag">HEALTHY</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍳','Full Breakfast','فول بريكفاست','بيض مخفوق، بيكون، توست، طماطم مشوية، وعصير برتقال طازج','120 جنيه')">
+        <span class="card-icon">🍳</span>
+        <div class="card-name">Full Breakfast</div>
+        <div class="card-name-ar">فول بريكفاست</div>
+        <p class="card-desc">بيض مخفوق، بيكون، توست، طماطم مشوية وعصير طازج</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>١٢٠</div><span class="card-tag">FULL SET</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🧇','Belgian Waffle','وافل بلجيكي','وافل ذهبي طازج مع قشطة وعسل بلدي وفراولة طازجة','55 جنيه')">
+        <span class="card-icon">🧇</span>
+        <div class="card-name">Belgian Waffle</div>
+        <div class="card-name-ar">وافل بلجيكي</div>
+        <p class="card-desc">وافل ذهبي طازج مع قشطة وعسل بلدي وفراولة</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٥٥</div><span class="card-tag">BRUNCH</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🥗','Caesar Salad','سيزر سلطة','خس روماني مقرمش مع صلصة سيزر كلاسيكية وكروتونات وجبن بارميزان','60 جنيه')">
+        <span class="card-icon">🥗</span>
+        <div class="card-name">Caesar Salad</div>
+        <div class="card-name-ar">سيزر سلطة</div>
+        <p class="card-desc">خس روماني مع صلصة سيزر كلاسيكية وكروتونات وبارميزان</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٦٠</div><span class="card-tag">LIGHT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESSERTS -->
+  <div class="section" id="desserts">
+    <div class="section-header">
+      <p class="section-eyebrow">Sweet Endings</p>
+      <h2 class="section-title">الحلويات</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="featured-row">
+      <div class="featured-card" onclick="openModal('🎂','Ember Cake','كيك إمبر','كيك شوكولاتة داكنة بلجيكية مع كراميل مالح وطبقة من الكريمة الفرنسية — التحفة الخاصة بينا','80 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">🏆 الأفخم</span>
+        <span class="featured-icon">🎂</span>
+        <h3 class="featured-name">Ember Cake</h3>
+        <p class="featured-desc">شوكولاتة داكنة بلجيكية مع كراميل مالح وكريمة فرنسية</p>
+        <div class="featured-price">٨٠ ج</div>
+      </div>
+      <div class="featured-card" onclick="openModal('🧁','Velvet Cupcake','فيلفيت كب كيك','كب كيك ريد فيلفيت كلاسيكي مع كريمة الجبن الفاخرة وديكور شوكولاتة','45 جنيه')">
+        <div class="glow-orb"></div>
+        <span class="featured-label">💕 الأحلى</span>
+        <span class="featured-icon">🧁</span>
+        <h3 class="featured-name">Velvet Cupcake</h3>
+        <p class="featured-desc">ريد فيلفيت مع كريمة جبن فاخرة وديكور شوكولاتة</p>
+        <div class="featured-price">٤٥ ج</div>
+      </div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="openModal('🍮','Crème Brûlée','كريم بروليه','كريم بروليه فرنسي كلاسيكي بالفانيليا مع طبقة السكر المكرمل الذهبية','55 جنيه')">
+        <span class="card-icon">🍮</span>
+        <div class="card-name">Crème Brûlée</div>
+        <div class="card-name-ar">كريم بروليه</div>
+        <p class="card-desc">كلاسيك فرنسي بالفانيليا مع طبقة السكر المكرمل الذهبية</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٥٥</div><span class="card-tag">FRENCH</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍪','Cookie Skillet','كوكيز سكيليت','كوكيز شوكولاتة طازج ساخن في طاسة حديد مع آيس كريم فانيليا','60 جنيه')">
+        <span class="card-icon">🍪</span>
+        <div class="card-name">Cookie Skillet</div>
+        <div class="card-name-ar">كوكيز سكيليت</div>
+        <p class="card-desc">كوكيز ساخن في طاسة حديد مع آيس كريم فانيليا</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٦٠</div><span class="card-tag">HOT</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍰','New York Cheesecake','تشيز كيك نيويورك','تشيز كيك كريمي كلاسيكي على قاعدة بسكويت مع توبينج توت أحمر','65 جنيه')">
+        <span class="card-icon">🍰</span>
+        <div class="card-name">New York Cheesecake</div>
+        <div class="card-name-ar">تشيز كيك نيويورك</div>
+        <p class="card-desc">كريمي كلاسيكي على بسكويت مع توبينج توت أحمر</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٦٥</div><span class="card-tag">CREAMY</span></div>
+      </div>
+      <div class="menu-card" onclick="openModal('🍫','Chocolate Lava','تشوكليت لافا','كيك شوكولاتة داكنة بقلب منصهر سائل ساخن مع آيس كريم فانيليا','70 جنيه')">
+        <span class="card-icon">🍫</span>
+        <div class="card-name">Chocolate Lava</div>
+        <div class="card-name-ar">تشوكليت لافا</div>
+        <p class="card-desc">قلب شوكولاتة منصهر ساخن مع آيس كريم فانيليا</p>
+        <div class="card-footer"><div class="card-price"><span>ج</span>٧٠</div><span class="card-tag">INDULGENT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPECIAL OFFERS -->
+  <div class="section" id="special">
+    <div class="section-header">
+      <p class="section-eyebrow">Limited Time Deals</p>
+      <h2 class="section-title">عروض خاصة</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="special-banner">
+      <span class="banner-icon">🎉</span>
+      <div class="banner-text">
+        <h3>عروض محدودة المدة</h3>
+        <p>استمتع بأفضل قيمة مقابل المال — العروض متاحة طوال اليوم</p>
+      </div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="openModal('☀️','Breakfast Bundle','باقة الإفطار','فول بريكفاست كامل + أي مشروب ساخن + كرواسان طازج — وفر ٣٠ جنيه!','135 جنيه')">
+        <span class="card-icon">☀️</span>
+        <div class="card-name">Breakfast Bundle</div>
+        <div class="card-name-ar">باقة الإفطار</div>
+        <p class="card-desc">فول بريكفاست + مشروب ساخن + كرواسان — وفر ٣٠ جنيه!</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>١٣٥</div>
+          <span class="card-tag">SAVE 30ج</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('👫','Couple Deal','ديل الكابل','كوبين قهوة سيجنيتشر + كيك إمبر للتشارك — الأنسب لقضاء وقت مميز','130 جنيه')">
+        <span class="card-icon">👫</span>
+        <div class="card-name">Couple Deal</div>
+        <div class="card-name-ar">ديل الكابل</div>
+        <p class="card-desc">كوبين سيجنيتشر + كيك إمبر — وفر ٤٠ جنيه!</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>١٣٠</div>
+          <span class="card-tag">SAVE 40ج</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('🌙','Afternoon Delight','بعد الظهر ديلايت','أي مشروب بارد + أي حلوى من الاختيار + كوكيز سكيليت — بعد ٣ عصر فقط','100 جنيه')">
+        <span class="card-icon">🌙</span>
+        <div class="card-name">Afternoon Delight</div>
+        <div class="card-name-ar">بعد الظهر ديلايت</div>
+        <p class="card-desc">مشروب بارد + حلوى + كوكيز سكيليت — بعد ٣ عصر</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>١٠٠</div>
+          <span class="card-tag">AFTER 3PM</span>
+        </div>
+      </div>
+      <div class="menu-card" onclick="openModal('💼','Work From Ember','اشتغل من إمبر','مشروب ساخن كبير + ساندويتش + ريفيل مجاني للقهوة طول ما أنت شغال','95 جنيه')">
+        <span class="card-icon">💼</span>
+        <div class="card-name">Work From Ember</div>
+        <div class="card-name-ar">اشتغل من إمبر</div>
+        <p class="card-desc">مشروب ساخن + ساندويتش + ريفيل مجاني طول اليوم</p>
+        <div class="card-footer">
+          <div class="card-price"><span>ج</span>٩٥</div>
+          <span class="card-tag">ALL DAY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">Ember</div>
+  <div class="footer-tagline">CAFÉ & ROASTERY • SINCE 2018</div>
+  <div class="footer-info">
+    <div class="footer-info-item">📍 شارع المتنزه، الفيوم</div>
+    <div class="footer-info-item">🕐 ٨ص — ١٢ م يومياً</div>
+    <div class="footer-info-item">📞 010 xxxx xxxx</div>
+    <div class="footer-info-item">📶 EMBER_WIFI</div>
+  </div>
+</footer>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal" onclick="closeModalOnBg(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <span class="modal-icon" id="mIcon"></span>
+    <h2 class="modal-name" id="mName"></h2>
+    <p class="modal-sub"  id="mSub"></p>
+    <div class="modal-hr"></div>
+    <p class="modal-desc" id="mDesc"></p>
+    <div class="modal-price" id="mPrice"></div>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.section).classList.add('active');
+      document.querySelector('.menu-main').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+
+  // Staggered card animation
+  function animateCards() {
+    document.querySelectorAll('.section.active .menu-card, .section.active .featured-card').forEach((card, i) => {
+      card.style.animationDelay = `${i * 0.07}s`;
+    });
+  }
+
+  const obs = new MutationObserver(animateCards);
+  document.querySelectorAll('.section').forEach(s => obs.observe(s, {attributes:true}));
+  animateCards();
+
+  // Modal
+  function openModal(icon, name, sub, desc, price) {
+    document.getElementById('mIcon').textContent = icon;
+    document.getElementById('mName').textContent = name;
+    document.getElementById('mSub').textContent  = sub;
+    document.getElementById('mDesc').textContent = desc;
+    document.getElementById('mPrice').innerHTML  = price + ' <small>جنيه</small>';
+    document.getElementById('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeModalOnBg(e) {
+    if (e.target === document.getElementById('modal')) closeModal();
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+</body>
+</html>
